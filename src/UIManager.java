@@ -4,7 +4,7 @@ import java.awt.event.*;
 
 public class UIManager extends JFrame implements ActionListener {
     private JTextField input1, input2, result;
-    private JComboBox<String> operation;
+    private JButton[] operationButtons;
     private JButton calculate, clear;
     private CalculatorOperations operations;
 
@@ -21,7 +21,7 @@ public class UIManager extends JFrame implements ActionListener {
         mainPanel.add(createResultPanel(), BorderLayout.SOUTH);
 
         setContentPane(mainPanel);
-        setSize(300, 400);
+        setSize(400, 500);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setResizable(false);
         setLocationRelativeTo(null);
@@ -57,9 +57,8 @@ public class UIManager extends JFrame implements ActionListener {
         textField.setMaximumSize(new Dimension(200, 30));
         textField.setAlignmentX(Component.CENTER_ALIGNMENT);
         textField.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(Color.BLACK, 1),
-            BorderFactory.createEmptyBorder(5, 10, 5, 10)
-        ));
+                BorderFactory.createLineBorder(Color.BLACK, 1),
+                BorderFactory.createEmptyBorder(5, 10, 5, 10)));
         fieldPanel.add(label);
         fieldPanel.add(Box.createVerticalStrut(5));
         fieldPanel.add(textField);
@@ -68,27 +67,49 @@ public class UIManager extends JFrame implements ActionListener {
     }
 
     private JPanel createOperationPanel() {
-        JPanel panel = new JPanel(new FlowLayout(FlowLayout.CENTER, 15, 10));
+        JPanel panel = new JPanel(new GridLayout(5, 4, 10, 10)); // 5 rows, 4 columns grid
         panel.setOpaque(false);
-        String[] operationsList = {"+", "-", "*", "/", "^", "√", "%", "log", "ln", "e^x",
-                                    "sin", "cos", "tan", "asin", "acos", "atan", "abs",
-                                    "factorial", "sinh", "cosh", "tanh"};
-        operation = new JComboBox<>(operationsList);
-        operation.setFont(new Font("Arial", Font.BOLD, 14));
-        operation.setPreferredSize(new Dimension(100, 30));
-        JLabel opLabel = new JLabel("Select Operation:");
-        opLabel.setFont(new Font("Arial", Font.BOLD, 11));
-        opLabel.setForeground(Color.BLACK);
-        panel.add(opLabel);
-        panel.add(operation);
+
+        String[] operationsList = { "+", "-", "*", "/", "^", "√", "%", "log", "ln", "e^x",
+                "sin", "cos", "tan", "asin", "acos", "atan", "abs",
+                "factorial", "sinh", "cosh", "tanh" };
+
+        operationButtons = new JButton[operationsList.length];
+
+        for (int i = 0; i < operationsList.length; i++) {
+            JButton button = createStyledButton(operationsList[i], Color.CYAN);
+            button.addActionListener(this);
+            operationButtons[i] = button;
+            panel.add(button);
+        }
+
         return panel;
+    }
+
+    private void performOperation(String operation) {
+        try {
+            double num1 = input1.getText().isEmpty() ? 0 : Double.parseDouble(input1.getText());
+            double num2 = input2.getText().isEmpty() ? 0 : Double.parseDouble(input2.getText());
+
+            // If operation requires only one number (like sqrt, log), we set num2 to 0
+            if (operation.matches("√|log|ln|e\\^x|sin|cos|tan|asin|acos|atan|abs|factorial|sinh|cosh|tanh")) {
+                num2 = 0;
+            }
+
+            double output = operations.performOperation(num1, num2, operation);
+            result.setText(String.valueOf(output));
+        } catch (NumberFormatException ex) {
+            result.setText("Invalid Input");
+        } catch (ArithmeticException ex) {
+            result.setText("Error: " + ex.getMessage());
+        }
     }
 
     private JPanel createResultPanel() {
         JPanel panel = new JPanel(new FlowLayout(FlowLayout.CENTER, 20, 15));
         panel.setOpaque(false);
-        calculate = createStyledButton("Calculate", Color.BLUE);
-        clear = createStyledButton("Clear", Color.RED);
+        calculate = createStyledButton2("Calculate", Color.BLUE);
+        clear = createStyledButton2("Clear", Color.RED);
         calculate.addActionListener(this);
         clear.addActionListener(this);
         panel.add(calculate);
@@ -104,66 +125,75 @@ public class UIManager extends JFrame implements ActionListener {
     }
 
     private JButton createStyledButton(String text, Color bgColor) {
-        JButton button = new JButton(text) {
-            @Override
-            protected void paintComponent(Graphics g) {
-                Graphics2D g2 = (Graphics2D) g.create();
-                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                g2.setColor(getBackground());
-                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 25, 25);
-                super.paintComponent(g2);
-                g2.dispose();
-            }
-            @Override
-            protected void paintBorder(Graphics g) {
-                Graphics2D g2 = (Graphics2D) g.create();
-                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                g2.setColor(Color.BLACK);
-                g2.drawRoundRect(0, 0, getWidth()-1, getHeight()-1, 25, 25);
-                g2.dispose();
-            }
-        };
+        JButton button = new JButton(text);
         button.setFont(new Font("Arial", Font.BOLD, 14));
-        button.setForeground(Color.WHITE);
+        button.setForeground(Color.black);
         button.setFocusPainted(false);
-        button.setBorderPainted(false);
-        button.setContentAreaFilled(false);
-        button.setOpaque(false);
         button.setBackground(bgColor);
-        button.setBorder(BorderFactory.createEmptyBorder(8, 20, 8, 20));
+        button.setBorder(BorderFactory.createLineBorder(Color.BLACK, 1));
+
+        // Change the background color when the mouse enters and exits
         button.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseEntered(MouseEvent e) {
                 button.setBackground(bgColor.darker());
             }
+
             @Override
             public void mouseExited(MouseEvent e) {
                 button.setBackground(bgColor);
             }
         });
+
         return button;
     }
+    private JButton createStyledButton2(String text, Color bgColor) {
+        JButton button = new JButton(text);
+        button.setFont(new Font("Arial", Font.BOLD, 14));
+        button.setForeground(Color.white);
+        button.setFocusPainted(false);
+        button.setBackground(bgColor);
+        button.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(Color.BLACK, 1),
+            BorderFactory.createEmptyBorder(10, 15, 10, 15) // Increased padding
+        ));
+    
+        button.addMouseListener(new MouseAdapter() {
+            public void mouseEntered(MouseEvent e) { button.setBackground(bgColor.darker()); }
+            public void mouseExited(MouseEvent e) { button.setBackground(bgColor); }
+        });
+    
+        return button;
+    }
+    
 
     @Override
     public void actionPerformed(ActionEvent e) {
+        // Check if it's one of the operation buttons
+        for (JButton button : operationButtons) {
+            if (e.getSource() == button) {
+                performOperation(button.getText());
+                return;
+            }
+        }
+
+        // If Calculate or Clear is pressed
         if (e.getSource() == clear) {
             input1.setText("");
             input2.setText("");
             result.setText("");
             return;
         }
-        try {
-            String selectedOperation = (String) operation.getSelectedItem();
+
+        // Handle Calculate button separately
+        if (e.getSource() == calculate) {
             double num1 = input1.getText().isEmpty() ? 0 : Double.parseDouble(input1.getText());
             double num2 = input2.getText().isEmpty() ? 0 : Double.parseDouble(input2.getText());
-            if (selectedOperation.matches("√|log|ln|e\\^x|sin|cos|tan|asin|acos|atan|abs|factorial|sinh|cosh|tanh"))
-                num2 = 0;
-            double output = operations.performOperation(num1, num2, selectedOperation);
+            // You don't need to check for a selected operation, as this is handled by the
+            // button
+            double output = operations.performOperation(num1, num2, "calculate"); // Modify as needed if any specific
+                                                                                  // operation is performed
             result.setText(String.valueOf(output));
-        } catch (NumberFormatException ex) {
-            result.setText("Invalid Input");
-        } catch (ArithmeticException ex) {
-            result.setText("Error: " + ex.getMessage());
         }
     }
 
