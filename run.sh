@@ -1,13 +1,16 @@
-#!/bin/bash
+SRC_DIR="src/main/java"
+BIN_DIR="bin"
 
-# Set script to exit on any error
-set -e
+mkdir -p "$BIN_DIR"
 
-# Create bin directory if not exists
-mkdir -p bin
+echo "Compiling Java files..."
+javac -d "$BIN_DIR" "$SRC_DIR"/com/calculator/*.java "$SRC_DIR"/com/calculator/ui/*.java "$SRC_DIR"/com/calculator/logic/*.java
 
-# Compile Java files and store class files in 'bin' directory
-javac -d bin src/*.java
-
-# Run the program from the 'bin' directory
-java -cp bin Main
+if [ $? -eq 0 ]; then
+    echo "Compilation successful. Running the calculator..."
+    cd "$BIN_DIR" || exit
+    java com.calculator.Main
+else
+    echo "Compilation failed. Please check your Java files for errors."
+    exit 1
+fi
